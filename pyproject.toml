@@ -1,0 +1,14 @@
+[tool.poetry]
+name = "ai-mini-design-31"
+version = "0.1.0"
+description = "AI Ethics Risk Diagnosis and Improvement Recommendation Multi-Agent System"
+authors = ["LeeSpect <wewqwew153@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

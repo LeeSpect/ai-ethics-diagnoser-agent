@@ -1,0 +1,68 @@
+보고서 생성 요청: AI 윤리성 리스크 진단 보고서 (개선안 포함)
+
+**1. 보고서 기본 정보:**
+- 보고서 제목: AI 윤리성 리스크 진단 보고서: {service_name}
+- 작성일: {current_date}
+- 진단 기관: {진단기관명}
+
+**2. SUMMARY (보고서 전체 내용을 5줄 이내로 요약):**
+{summary_placeholder}
+
+**3. 진단 개요:**
+- 진단 대상 AI 서비스: {service_name} (서비스 유형: {service_type})
+- 진단 목적: {service_name}의 AI 윤리적 리스크를 "2025 인공지능 윤리기준 실천을 위한 자율점검표(안)"에 근거하여 분석하고, 과거 유사 사례 분석을 통해 개선 권고안을 도출하여 안전하고 신뢰할 수 있는 AI 서비스 구현에 기여함을 목적으로 합니다.
+- 평가 기준: "2025 인공지능 윤리기준 실천을 위한 자율점검표(안)" (이하 '자율점검표')
+
+**4. AI 서비스 분석 결과:**
+- 대상 기능: {analyzed_features_placeholder}
+- 주요 특징: {key_characteristics_placeholder}
+- 데이터 수집/활용 (추정): {data_usage_placeholder}
+- 예상 사용자 및 이해관계자: {stakeholders_placeholder}
+
+**5. 주요 윤리적 리스크 진단 결과:**
+{risk_assessment_details_placeholder}
+  (예시:
+  - 편향성: 학습 데이터에서의 {bias_source}로 인해 {specific_bias_risk}이 발견되었습니다. 이는 자율점검표 항목 E03.02(데이터 편향 가능성 판단 및 최소화 노력) 위배 가능성이 있습니다.
+  - 프라이버시: {privacy_concern_details}와 같은 프라이버시 침해 우려가 식별되었습니다. 자율점검표 항목 E02.01(개인정보보호 자율점검표 점검 수행) 및 E02.02(사생활 침해 우려 검토)에 대한 추가 점검이 필요합니다.)
+- 식별된 주요 취약점:
+  {identified_vulnerabilities_placeholder}
+
+**6. 과거 AI 윤리 문제 사례 심층 분석 및 인사이트:**
+- 분석 대상 과거 사례: {past_case_name_1}, {past_case_name_2} (및 기타 관련 사례)
+- 과거 사례별 원인 및 구조 분석:
+  - 사례 1 ({past_case_name_1}):
+    - 원인: {past_case_1_cause_placeholder}
+    - 구조: {past_case_1_structure_placeholder}
+    - 취약점: {past_case_1_vulnerability_placeholder}
+  - 사례 2 ({past_case_name_2}):
+    - 원인: {past_case_2_cause_placeholder}
+    - 구조: {past_case_2_structure_placeholder}
+    - 취약점: {past_case_2_vulnerability_placeholder}
+- 진단 대상 서비스({service_name})와의 비교 분석 및 시사점:
+  {comparison_insights_placeholder}
+- 도출된 주요 인사이트:
+  {key_takeaways_placeholder}
+
+**7. 개선 권고안:**
+- 단기적 개선 방안:
+  {short_term_recommendations_placeholder}
+    (예: - 학습 데이터셋 내 {specific_group}에 대한 대표성 강화 및 편향 완화 알고리즘 적용 (자율점검표 E03.02 관련))
+- 중장기적 개선 방향:
+  {mid_long_term_recommendations_placeholder}
+    (예: - AI 윤리 교육 프로그램 정기 운영 및 개발 프로세스 내 윤리 검토 단계 의무화 (자율점검표 E08.01 관련))
+- 윤리적 AI 거버넌스 제안:
+  {governance_suggestions_placeholder}
+    (예: - 독립적인 AI 윤리 위원회 구성 및 정기적인 외부 감사 시행)
+
+**8. 결론:**
+{conclusion_placeholder}
+  (예: {service_name} 서비스는 {identified_risks} 등의 윤리적 리스크가 식별되었으며, 제시된 개선 권고안의 적극적인 이행을 통해 보다 신뢰받는 AI 서비스로 발전할 수 있을 것으로 기대됩니다. 지속적인 모니터링과 윤리적 고려가 중요합니다.)
+
+**[보고서 작성 지침]**
+- 제공된 `참고context`의 "2025 인공지능 윤리기준 실천을 위한 자율점검표(안)"의 관련 항목(예: E01.01)을 문맥에 맞게 명시적으로 인용하여 주십시오.
+- 과거 사례 분석은 구체적인 원인, 문제 구조, 기술적/정책적 취약점을 명확히 기술하고, 진단 대상 서비스에 적용 가능한 교훈과 인사이트를 논리적으로 도출해 주십시오.
+- 개선 권고안은 실행 가능성을 고려하여 구체적으로 제시하고, 필요한 경우 관련 자율점검표 항목을 참조로 언급해 주십시오.
+- 전체적으로 전문적이고 객관적인 어조를 유지하며, 명확하고 간결하게 작성해 주십시오.
+
+**참고context**
+{context}
