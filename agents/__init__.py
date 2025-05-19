@@ -1,1 +1,9 @@
 from .service_analyzer import ServiceAnalyzerAgent
+from .risk_classifier import RiskClassifierAgent
+from .specific_risk_diagnosis_router import SpecificRiskDiagnosisRouterAgent
+from .ethics_risk_diagnoser_chatbot import EthicsRiskDiagnoserChatbotAgent
+from .ethics_risk_diagnoser_recsys import EthicsRiskDiagnoserRecSysAgent
+from .ethics_risk_diagnoser_imagegen import EthicsRiskDiagnoserImageGenAgent
+from .ethics_risk_diagnoser_general import EthicsRiskDiagnoserGeneralAgent
+
+print("Agents package initialized.")
