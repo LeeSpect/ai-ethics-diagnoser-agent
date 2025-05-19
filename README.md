@@ -30,8 +30,9 @@
     -   과거 사례의 발생 원인, 문제 구조, 기술적/정책적 취약점 등을 심층 분석합니다.
     -   분석된 과거 사례와 현재 진단 대상 서비스를 비교하여, 구체적인 시사점과 개선 방향에 대한 인사이트를 도출합니다.
 -   **상황별 맞춤형 보고서 자동 생성**:
-    -   진단 결과, 식별된 윤리적 문제의 심각성 및 개선안 도출 여부에 따라 두 가지 유형의 보고서(문제 없을 시/개선안 포함 시)를 자동으로 생성합니다.
-    -   보고서는 명확한 구조와 함께 상세 분석 내용, 과거 사례 비교, 구체적인 개선 권고안을 포함합니다.
+    -   **진단 결과 기반 분기**: 모든 진단 완료 후, 식별된 윤리적 문제의 심각성을 판단하여 개선안이 필요한 경우와 그렇지 않은 경우를 구분합니다.
+    -   **두 가지 보고서 유형**: "문제 없음" 보고서와 "개선안 포함" 보고서를 자동으로 생성합니다.
+    -   **상세 내용**: 보고서는 명확한 구조와 함께 상세 분석 내용, 과거 사례 비교를 포함하며, 필요한 경우 구체적인 개선 권고안을 포함합니다.
 -   **API 기반 서비스 제공**: FastAPI를 통해 외부 시스템이나 사용자가 AI 윤리 진단 기능을 쉽게 요청하고, 구조화된 진단 결과를 보고서 형태로 받을 수 있는 RESTful API 인터페이스를 제공합니다.
 
 ## 3. 기술 스택 (Tech Stack)
@@ -68,33 +69,34 @@
     -   **심층/과거사례 분석 (특화된 부분)**: 현재 처리 중인 특정 리스크 카테고리(예: `bias_chatbot`)에 대해, ChromaDB에 저장된 관련 과거 AI 윤리 문제 사례 및 Tavily Search API로 수집한 정보를 심층 분석. 과거 사례의 원인, 구조, 취약점을 분석하고 현재 서비스와의 비교를 통해 인사이트 도출. 결과는 `specific_ethics_risks_by_category`와 `past_case_analysis_results_by_category`에 해당 카테고리명과 함께 누적 저장.
     -   작업 완료 후 `pending_specific_diagnoses` 리스트에서 현재 처리한 카테고리를 제거하고, 다시 `specific_risk_diagnosis_router_agent`로 흐름을 돌려보냅니다.
     -   **활용 도구**: LLM (GPT-4o), ChromaDB (RAG), Tavily Search API.
--   **`improvement_suggester_agent` (개선안 제안 에이전트)**:
-    -   **역할**: 모든 진단 결과(`common_ethics_risks`, `specific_ethics_risks_by_category`, `past_case_analysis_results_by_category`)를 종합적으로 고려하여, 서비스의 윤리성 강화를 위한 개선 권고안을 제안합니다.
-    -   **출력**: 개선안 내용과 함께, `issue_found` 상태값을 판단하여 반환합니다.
-    -   **활용 도구**: LLM (GPT-4o).
 -   **`report_type_decider_agent` (보고서 유형 결정 에이전트)**:
-    -   **역할**: `issue_found` 상태값을 기반으로 생성할 보고서의 유형("문제 없음" 또는 "개선안 포함")을 결정합니다.
-    -   **활용 도구**: Python 로직.
+    -   **역할**: 모든 특화 진단이 완료된 후 호출됩니다. 이전 단계까지 누적된 진단 결과들(`common_ethics_risks`, `specific_ethics_risks_by_category`, `past_case_analysis_results_by_category`)을 종합적으로 검토하여, **실제로 개선이 필요한 심각한 윤리적 문제가 발견되었는지 여부(`issue_found`)를 판단**하고, 이에 따라 생성할 보고서의 유형(`report_type`: "no_issue_report" 또는 "issue_improvement_report")을 결정합니다.
+    -   **활용 도구**: LLM (GPT-4o) 또는 정교한 Python 로직 (진단 결과의 심각도를 평가하는 규칙 기반).
+-   **`improvement_suggester_agent` (개선안 제안 에이전트)**:
+    -   **역할**: **`report_type_decider_agent`가 `issue_found`를 `True`로 판단하여 "개선안 포함" 보고서 경로로 분기된 경우에만 호출됩니다.** 모든 진단 결과 및 과거 사례 분석 인사이트를 바탕으로, 서비스의 윤리성 강화를 위한 구체적이고 실행 가능한 개선 권고안(단기, 중장기, 거버넌스)을 제안합니다.
+    -   **활용 도구**: LLM (GPT-4o).
 -   **`report_generator_agent` (리포트 작성 에이전트)**:
-    -   **역할**: 모든 수집된 정보와 결정된 `report_type`을 바탕으로, 최종 보고서를 생성합니다.
+    -   **역할**: `report_type_decider_agent`로부터 결정된 `report_type`과, (필요시) `improvement_suggester_agent`로부터 전달받은 개선안을 포함하여, 지금까지 수집된 모든 정보를 바탕으로 최종 보고서를 생성합니다.
     -   **활용 도구**: LLM (GPT-4o), Python 문자열 포맷팅.
 
 ## 5. 상태 정의 (LangGraph State)
 
--   `service_name`: (str) 진단 대상 서비스 명칭.
--   `service_type`: (Literal["챗봇", "추천 알고리즘", "이미지 생성 AI"]) AI 서비스 유형.
--   `service_initial_info`: (str or dict) 사용자가 입력한 초기 서비스 정보.
--   `analyzed_service_info`: (Optional[ServiceAnalysisOutput]) 서비스 분석 결과.
--   `main_risk_categories`: (Optional[List[str]]) `risk_classifier_agent`가 식별한 주요 윤리 리스크 카테고리 리스트. (예: `['bias_chatbot', 'privacy_chatbot']`)
--   `pending_specific_diagnoses`: (Optional[List[str]]) 아직 처리되지 않은 특화 진단 대상 리스크 카테고리 리스트. `main_risk_categories`로 초기화되며, 하나씩 처리될 때마다 제거됨.
--   `common_ethics_risks`: (Optional[Dict[str, str]]) 공통 윤리 리스크 진단 결과 (누적).
--   `specific_ethics_risks_by_category`: (Optional[Dict[str, Dict[str, str]]]) 각 특화 리스크 카테고리별 심층 진단 결과 (누적, 예: `{"bias_chatbot": {...}, "privacy_chatbot": {...}}`).
--   `past_case_analysis_results_by_category`: (Optional[Dict[str, List[PastCaseAnalysis]]]) 각 특화 리스크 카테고리별 과거 사례 분석 결과 (누적).
--   `improvement_recommendations`: (Optional[ImprovementMeasures]) 개선 권고안.
--   `issue_found`: (Optional[bool]) 개선안 필요 여부 (True/False).
--   `report_type`: (Optional[Literal["no_issue_report", "issue_improvement_report"]]) 생성할 보고서 유형.
--   `final_report_markdown`: (Optional[str]) 최종 생성된 보고서 (마크다운 형식).
--   `error_message`: (Optional[str]) 처리 중 발생한 에러 메시지.
+LangGraph의 상태(State)는 파이프라인 전체에서 에이전트 간 정보를 공유하고 작업 흐름을 관리하는 데 사용됩니다.
+
+-   `service_name`: (str)
+-   `service_type`: (Literal["챗봇", "추천 알고리즘", "이미지 생성 AI"])
+-   `service_initial_info`: (str or dict)
+-   `analyzed_service_info`: (Optional[ServiceAnalysisOutput])
+-   `main_risk_categories`: (Optional[List[str]])
+-   `pending_specific_diagnoses`: (Optional[List[str]])
+-   `common_ethics_risks`: (Optional[Dict[str, str]]) (누적)
+-   `specific_ethics_risks_by_category`: (Optional[Dict[str, Dict[str, str]]]) (누적)
+-   `past_case_analysis_results_by_category`: (Optional[Dict[str, List[PastCaseAnalysis]]]) (누적)
+-   `issue_found`: (Optional[bool]) **`report_type_decider_agent`가 설정.**
+-   `report_type`: (Optional[Literal["no_issue_report", "issue_improvement_report"]]) **`report_type_decider_agent`가 설정.**
+-   `improvement_recommendations`: (Optional[ImprovementMeasures]) **`issue_found`가 True일 때만 `improvement_suggester_agent`가 설정.**
+-   `final_report_markdown`: (Optional[str])
+-   `error_message`: (Optional[str])
 
 ## 6. 아키텍처 다이어그램 (Architecture Diagram)
 
@@ -111,14 +113,31 @@ v
 [Specific Risk Diagnosis Router Agent (pending_specific_diagnoses 확인)] --+
 |                                                                     |
 +--(조건: Chatbot 진단 필요)-----> [Diagnoser Chatbot Node] -----------+
-|                                     (결과 누적, pending에서 제거)      | (다음 진단으로 루프)
+|                                     (결과 누적, pending에서 제거)      | (다음 특화 진단으로 루프 또는 완료)
 +--(조건: RecSys 진단 필요)-------> [Diagnoser RecSys Node] ------------+
 |                                     (결과 누적, pending에서 제거)      |
 +--(조건: ImgGen 진단 필요)------> [Diagnoser ImgGen Node] ------------+
 |                                     (결과 누적, pending에서 제거)      |
 |                                                                     |
-+--(조건: 모든 특화 진단 완료)--> [Improvement Suggester Agent] ----> [Report Type Decider Agent] --> [Report Generator Agent] --> [FastAPI 응답: 보고서]
++--(조건: 모든 특화 진단 완료)--> [Report Type Decider Agent (issue_found, report_type 결정)] --+
+|
++----------------------------------(조건: report_type == "no_issue_report")---------------------+
+|                                                                                              |
+|                                                                                              |
++--(조건: report_type == "issue_improvement_report")--> [Improvement Suggester Agent] ----------+
+(개선안 생성)                     |
+|
+v
+[Report Generator Agent] --> [FastAPI 응답: 보고서]
 ```
+
+-   **흐름 설명**:
+    1.  서비스 분석 및 주요 리스크 카테고리 분류는 동일하게 진행됩니다.
+    2.  `Specific Risk Diagnosis Router Agent`는 `pending_specific_diagnoses` 리스트에 따라 필요한 모든 특화 진단 노드(`Diagnoser Chatbot/RecSys/ImgGen Node`)를 순차적으로 실행시키고, 각 진단 결과는 상태에 누적됩니다.
+    3.  모든 특화 진단이 완료되면, `Report Type Decider Agent`가 호출됩니다. 이 에이전트는 누적된 모든 진단 결과를 바탕으로 심각한 문제가 있는지(`issue_found`) 판단하고, 이에 따라 `report_type`을 "no\_issue\_report" 또는 "issue\_improvement\_report"로 결정합니다.
+    4.  **조건부 분기 (개선안 제안 및 보고서 생성)**:
+        * 만약 `report_type`이 "issue\_improvement\_report" (즉, `issue_found`가 True)이면, 워크플로우는 `Improvement Suggester Agent`로 이동하여 개선안을 생성합니다. 그 후, 이 개선안을 포함하여 `Report Generator Agent`가 "개선안 포함" 보고서를 작성합니다.
+        * 만약 `report_type`이 "no\_issue\_report" (즉, `issue_found`가 False)이면, 워크플로우는 `Improvement Suggester Agent`를 건너뛰고 바로 `Report Generator Agent`로 이동하여 "문제 없음" 보고서를 작성합니다.
 
 ## 7. 디렉토리 구조 (Directory Structure)
 

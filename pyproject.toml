@@ -7,6 +7,17 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.11"
+python-dotenv = "^1.1.0"
+langchain = "^0.3.25"
+langgraph = "^0.4.5"
+langchain-openai = "^0.3.17"
+fastapi = "^0.115.9"
+uvicorn = {extras = ["standard"], version = "^0.34.2"}
+pydantic = "^2.11.4"
+chromadb = "^1.0.9"
+sentence-transformers = "^4.1.0"
+tavily-python = "^0.7.2"
+unstructured = {extras = ["pdf"], version = "^0.17.2"}
 
 
 [build-system]
