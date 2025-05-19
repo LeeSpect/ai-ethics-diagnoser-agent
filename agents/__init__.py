@@ -6,3 +6,4 @@ from .ethics_risk_diagnoser_chatbot import EthicsRiskDiagnoserChatbotAgent
 from .ethics_risk_diagnoser_recsys import EthicsRiskDiagnoserRecSysAgent
 from .ethics_risk_diagnoser_imagegen import EthicsRiskDiagnoserImageGenAgent
 from .ethics_risk_diagnoser_general import EthicsRiskDiagnoserGeneralAgent
+from .report_type_decider import ReportTypeDeciderAgent
