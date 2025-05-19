@@ -1,4 +1,3 @@
-# agents/report_type_decider.py
 import json
 from typing import Dict, Optional, Any
 from langchain_openai import ChatOpenAI
@@ -137,7 +136,7 @@ async def run_standalone_test():
     if os.path.exists(dotenv_path): load_dotenv(dotenv_path=dotenv_path)
 
     try:
-        from ..core.config import OPENAI_API_KEY as OAI_KEY_TEST # 테스트용으로 별도 변수
+        from ..core.config import OPENAI_API_KEY as OAI_KEY_TEST # 테스트용 별도 변수
     except ImportError:
         from core.config import OPENAI_API_KEY as OAI_KEY_TEST
 
