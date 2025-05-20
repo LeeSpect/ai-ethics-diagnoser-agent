@@ -36,15 +36,23 @@ class ReportGeneratorAgent:
                         if isinstance(sub_value, list) and sub_value and isinstance(sub_value[0], dict) and "case_name" in sub_value[0]: # PastCaseAnalysis 리스트
                             formatted_str += f"  - {sub_key}:\n"
                             for case_item in sub_value:
-                                formatted_str += f"    - 사례명: {case_item.get('case_name')}\n      인사이트: {case_item.get('key_insights')}\n" # 필요한 정보만
+                                formatted_str += f"    - 사례명: {case_item.get('case_name')}\n      인사이트: {case_item.get('key_insights')}\n" # 필요한 정보만 -> 모든 정보 제공으로 변경
                         elif isinstance(sub_value, dict) and "analysis" in sub_value : # specific_ethics_risks
                             formatted_str += f"    - {sub_key}: {sub_value.get('analysis')} (심각도: {sub_value.get('severity')})\n"
                         else:
-                            formatted_str += f"    - {sub_key}: {str(sub_value)[:150]}...\n"
+                            formatted_str += f"    - {sub_key}: {str(sub_value)}\n" # 축약 제거
                 elif isinstance(value, list):
-                    formatted_str += f"- {key}: {', '.join(map(str,value))[:200]}...\n"
+                    # 리스트의 각 아이템을 상세히 보여주거나, 혹은 요약 정보 강화
+                    # 여기서는 우선 전체를 문자열로 변환하되, 너무 길 경우를 대비한 처리는 프롬프트에서 유도
+                    items_str = []
+                    for item in value:
+                        if isinstance(item, dict):
+                            items_str.append(self._format_dict_to_string(item, indent + 2)) # 재귀 호출로 상세 포맷팅
+                        else:
+                            items_str.append(str(item))
+                    formatted_str += f"- {key}:\n  " + "\n  ".join(items_str) + "\n"
                 else:
-                    formatted_str += f"- {key}: {str(value)[:200]}...\n"
+                    formatted_str += f"- {key}: {str(value)}\n" # 축약 제거
             return formatted_str if formatted_str else "내용 없음"
         except Exception:
             return str(data) # 실패 시 원본 데이터 문자열화
@@ -57,8 +65,7 @@ class ReportGeneratorAgent:
             if not data_list: # 빈 리스트
                 return "해당 없음"
             # 각 항목을 번호 매기기 또는 불릿으로 표시
-            return "\n".join([f"- {item}" for item in data_list])
-        return str(data_list) # 리스트가 아닌 경우 문자열로 변환
+            return "\n".join([f"- {str(item)}" for item in data_list]) # str(item)으로 명시적 변환
 
     async def generate_report(self, state: ProjectState) -> ProjectState:
         print("--- Report Generator Agent: 최종 보고서 생성 시작 ---")
@@ -104,43 +111,70 @@ class ReportGeneratorAgent:
         if past_cases_by_cat:
             for category, cases in past_cases_by_cat.items():
                 past_cases_analysis_str += f"\n  카테고리 '{category}' 관련 과거 사례:\n"
-                for case in cases:
-                    past_case_names_list.append(case.get("case_name", "N/A"))
-                    past_cases_analysis_str += f"    - 사례명: {case.get('case_name', 'N/A')}\n"
-                    past_cases_analysis_str += f"      원인 및 구조: {case.get('cause_and_structure', 'N/A')}\n"
-                    past_cases_analysis_str += f"      취약점: {case.get('vulnerabilities', 'N/A')}\n"
-                    past_cases_analysis_str += f"      시사점: {case.get('key_insights', 'N/A')}\n"
+                for case_dict in cases: # case가 PastCaseAnalysis 객체가 아닌 딕셔너리일 수 있음을 가정하고 get 사용
+                    past_case_names_list.append(case_dict.get("case_name", "N/A"))
+                    past_cases_analysis_str += f"    - 사례명: {case_dict.get('case_name', 'N/A')}\n"
+                    past_cases_analysis_str += f"      개요: {case_dict.get('summary', 'N/A')}\n"
+                    past_cases_analysis_str += f"      원인 및 구조: {case_dict.get('cause_and_structure', 'N/A')}\n"
+                    past_cases_analysis_str += f"      적용된 기술 및 서비스 특징: {case_dict.get('technology_and_service_features', 'N/A')}\n"
+                    past_cases_analysis_str += f"      발생한 윤리적 문제 및 영향: {case_dict.get('ethical_issues_and_impact', 'N/A')}\n"
+                    past_cases_analysis_str += f"      대응 및 결과: {case_dict.get('response_and_results', 'N/A')}\n"
+                    past_cases_analysis_str += f"      주요 취약점: {case_dict.get('vulnerabilities', 'N/A')}\n"
+                    past_cases_analysis_str += f"      주요 시사점 및 교훈: {case_dict.get('key_insights', 'N/A')}\n"
+                    past_cases_analysis_str += f"      현재 서비스와의 관련성(추정): {case_dict.get('comparison_with_target_service', 'N/A')}\n"
         past_case_names_placeholder_str = ", ".join(list(set(past_case_names_list))) if past_case_names_list else "해당 없음"
 
-        # 비교분석 및 주요 인사이트는 LLM이 종합적으로 생성하도록 플레이스홀더 유지
+        # 비교분석 및 주요 인사이트는 LLM이 종합적으로 생성하도록 플레이스홀더 유지 (프롬프트에서 상세 지침 제공)
         comparison_insights_placeholder_str = "LLM이 종합적으로 기술할 부분"
         key_takeaways_placeholder_str = "LLM이 종합적으로 기술할 부분"
 
         # 전체 컨텍스트 (LLM에게 한 번에 전달)
-        # 각 에이전트의 원본 결과들을 문자열로 조합
-        context_for_llm = f"""
-        [서비스 분석 정보]
-        대상 기능: {sa_target_functions}
-        주요 특징: {sa_key_features}
-        데이터 수집/활용 (추정): {sa_data_usage}
-        예상 사용자 및 이해관계자: {sa_stakeholders}
+        # 각 에이전트의 원본 결과들을 문자열로 조합하여 상세 정보 제공
+        context_for_llm = f"""### 진단 대상 서비스 상세 정보 ###
+[서비스 기본 정보]
+- 서비스명: {service_name}
+- 서비스 유형: {service_type_str}
 
-        [공통 윤리 리스크 진단 결과]
-        {self._format_dict_to_string(common_risks)}
+[서비스 분석 결과 (ServiceAnalysisOutput)]
+- 대상 기능: {self._format_multiline_data(sa_target_functions, '대상 기능')}
+- 주요 특징: {self._format_multiline_data(sa_key_features, '주요 특징')}
+- 데이터 수집/활용 (추정): {self._format_multiline_data(sa_data_usage, '데이터 수집/활용')}
+- 예상 사용자 및 이해관계자: {self._format_multiline_data(sa_stakeholders, '예상 사용자 및 이해관계자')}
 
-        [주요 리스크 카테고리별 심층 진단 결과]
-        {self._format_dict_to_string(specific_risks)}
+### AI 윤리 리스크 진단 결과 ###
+[공통 윤리 리스크 진단 결과 (CommonEthicsRisks)]
+{self._format_dict_to_string(common_risks)}
 
-        [과거 AI 윤리 문제 사례 분석 결과]
-        {past_cases_analysis_str}
-        """
+[주요 리스크 카테고리별 심층 진단 결과 (SpecificEthicsRisksByCategory)]
+{self._format_dict_to_string(specific_risks)}
+
+### 과거 AI 윤리 문제 사례 분석 결과 (PastCaseAnalysisResultsByCategory) ###
+{past_cases_analysis_str}
+"""
         if recommendations: # 개선안이 있는 경우에만 컨텍스트에 추가
             context_for_llm += f"""
-            [제안된 개선 권고안]
-            단기적: {recommendations.get('short_term')}
-            중장기적: {recommendations.get('mid_long_term')}
-            거버넌스: {recommendations.get('governance_suggestions')}
-            """
+### 제안된 개선 권고안 (ImprovementMeasures) ###
+- 단기적 개선 방안:
+{self._format_list_to_string(recommendations.get('short_term'))}
+- 중장기적 개선 방안:
+{self._format_list_to_string(recommendations.get('mid_long_term'))}
+- 윤리적 AI 거버넌스 제안:
+{self._format_list_to_string(recommendations.get('governance_suggestions'))}
+"""
+
+        # "2025 인공지능 윤리기준 실천을 위한 자율점검표(안)" 주요 내용 추가 (예시)
+        # 실제로는 파일에서 읽어오거나, 중요한 부분만 요약하여 추가하는 것이 좋음
+        # 여기서는 프롬프트 내에서 활용하도록 유도하고, 컨텍스트에는 핵심 원칙 정도만 명시
+        ethics_guideline_summary = """
+### 참고: 인공지능 윤리기준 핵심 원칙 (요약) ###
+- 인간 중심성: AI는 인간의 존엄성과 복지를 최우선으로 고려해야 합니다.
+- 투명성: AI 시스템의 작동 방식과 결정 근거는 설명 가능해야 합니다.
+- 책임성: AI 시스템의 설계, 개발, 운영 전 과정에 걸쳐 책임 소재를 명확히 해야 합니다.
+- 공정성: AI는 특정 집단에 대한 부당한 차별을 야기하지 않아야 합니다.
+- 안전성: AI 시스템은 잠재적 위험으로부터 안전하게 설계되고 관리되어야 합니다.
+(상세 내용은 "2025 인공지능 윤리기준 실천을 위한 자율점검표(안)" 본문 참조 요망)
+"""
+        context_for_llm += "\n\n" + ethics_guideline_summary
 
         # 보고서 유형에 따라 프롬프트 선택 및 포맷팅
         if report_type == "issue_improvement_report":
@@ -223,11 +257,17 @@ class ReportGeneratorAgent:
         print("--- Report Generator Agent: 최종 보고서 생성 완료 ---")
         return state
 
-    def _format_list_to_string(self, data_list: Optional[List[str]]) -> str:
-        if not data_list:
-            return "- 해당 사항 없음"
-        return "\n".join([f"- {item}" for item in data_list])
-
+    def _format_multiline_data(self, data: Any, default_key: str) -> str:
+        """여러 줄 문자열이나 리스트를 보기 좋게 포맷팅. 단일 문자열이면 그대로 반환."""
+        if isinstance(data, list):
+            if not data:
+                return "- 제공된 정보 없음"
+            return "\n".join([f"  - {str(item)}" for item in data])
+        elif isinstance(data, str) and '\n' in data:
+            return "\n".join([f"  {line}" for line in data.split('\n')])
+        elif data:
+            return str(data)
+        return f"- {default_key} 정보 없음"
 
 # --- 테스트용 ---
 async def run_standalone_test():
