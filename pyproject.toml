@@ -21,6 +21,8 @@ unstructured = {extras = ["pdf"], version = "^0.17.2"}
 langchain-community = "^0.3.24"
 playwright = "^1.52.0"
 grandalf = "^0.8"
+markdown = "^3.8"
+weasyprint = "^65.1"
 
 
 [build-system]

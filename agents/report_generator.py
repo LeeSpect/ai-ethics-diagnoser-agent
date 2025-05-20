@@ -2,6 +2,11 @@ import json
 import datetime
 from typing import Dict, Optional, Any, List
 from langchain_openai import ChatOpenAI
+import markdown 
+from weasyprint import HTML, CSS 
+from weasyprint.fonts import FontConfiguration
+import os
+import re
 
 try:
     from ..core.states import ProjectState, ServiceAnalysisOutput, PastCaseAnalysis, ImprovementMeasures
@@ -249,6 +254,100 @@ class ReportGeneratorAgent:
             final_report_content = str(response.content)
             state["final_report_markdown"] = final_report_content
             print(f"  최종 보고서 생성 완료 (일부): {final_report_content[:300]}...")
+
+            # --- PDF 생성 로직 추가 ---
+            try:
+                print(f"  Markdown 보고서를 PDF로 변환 시작...")
+                md_content_for_pdf = final_report_content
+                
+                # HTML 및 CSS 정의 (이스케이프 문자 수정)
+                html_content = f'''
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <style>
+                        @font-face {{
+                            font-family: 'NanumGothic';
+                            src: local('NanumGothic'); /* 시스템에 설치된 폰트 사용 */
+                        }}
+                        @font-face {{
+                            font-family: 'NanumGothicCoding';
+                            src: local('NanumGothicCoding'); /* 시스템에 설치된 코딩 폰트 사용 */
+                        }}
+                        body {{
+                            font-family: 'NanumGothic', sans-serif;
+                            line-height: 1.6;
+                            word-wrap: break-word;
+                            white-space: pre-wrap;
+                        }}
+                        h1, h2, h3, h4, h5, h6 {{
+                            font-family: 'NanumGothic', sans-serif;
+                        }}
+                        table {{ border-collapse: collapse; width: 100%; }}
+                        th, td {{ border: 1px solid black; padding: 8px; text-align: left; }}
+                        th {{ background-color: #f2f2f2; }}
+                        code {{
+                            font-family: 'NanumGothicCoding', 'Courier New', Courier, monospace;
+                            background-color: #f0f0f0;
+                            padding: 2px 4px;
+                            border-radius: 4px;
+                            white-space: pre-wrap;
+                        }}
+                        pre {{
+                            background-color: #f0f0f0;
+                            padding: 10px;
+                            border-radius: 4px;
+                            overflow-x: auto;
+                            white-space: pre-wrap;
+                        }}
+                        pre code {{
+                            background-color: transparent;
+                            padding: 0;
+                            border-radius: 0;
+                            font-family: 'NanumGothicCoding', 'Courier New', Courier, monospace; /* pre 내부 code도 동일 폰트 적용 */
+                        }}
+                        ul, ol {{ padding-left: 20px; }}
+                        blockquote {{
+                            border-left: 4px solid #ccc;
+                            padding-left: 10px;
+                            color: #555;
+                            margin-left: 0;
+                        }}
+                    </style>
+                </head>
+                <body>
+                    {markdown.markdown(md_content_for_pdf, extensions=['markdown.extensions.tables', 'markdown.extensions.fenced_code', 'markdown.extensions.extra'])}
+                </body>
+                </html>
+                '''
+
+                reports_dir = os.path.join(os.getcwd(), "outputs", "reports")
+                if not os.path.exists(reports_dir):
+                    os.makedirs(reports_dir)
+                    print(f"  디렉토리 생성: {reports_dir}")
+
+                # 파일명 안전하게 만들기 (정규식 사용)
+                safe_service_name = re.sub(r'[^a-zA-Z0-9가-힣ㄱ-ㅎㅏ-ㅣ\s_-]', '_', service_name)
+                safe_service_name = re.sub(r'\s+', '_', safe_service_name) # 공백을 언더스코어로
+                safe_current_date = current_date_str.replace(':', '-').replace(' ', '_')
+                
+                pdf_filename = f"보고서_{safe_service_name}_{safe_current_date}.pdf"
+                pdf_path = os.path.join(reports_dir, pdf_filename)
+
+                font_config = FontConfiguration()
+                html_obj = HTML(string=html_content, base_url=os.getcwd())
+                html_obj.write_pdf(
+                    pdf_path,
+                    font_config=font_config
+                )
+                
+                state["final_report_pdf_path"] = pdf_path
+                print(f"  PDF 보고서 저장 완료: {pdf_path}")
+
+            except Exception as pdf_e:
+                print(f"  PDF 생성 중 오류 발생: {pdf_e}")
+                state["error_message"] = state.get("error_message", "") + f"; PDF 생성 오류: {pdf_e}"
+
         except Exception as e:
             print(f"  LLM 호출(보고서 생성) 중 오류 발생: {e}")
             state["error_message"] = f"보고서 생성 LLM 호출 오류: {e}"

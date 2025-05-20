@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import Body
+from fastapi.responses import FileResponse
 from typing import Dict, List, Deque
 import datetime
 import asyncio
@@ -9,6 +10,7 @@ from collections import deque
 from core.graph import app as langgraph_app, run_full_workflow_test
 from core.states import ProjectState
 from pydantic import BaseModel
+import os
 
 app = FastAPI(
     title="AI 윤리성 리스크 진단 및 개선 권고 멀티 에이전트 시스템",
@@ -82,7 +84,7 @@ root_logger = logging.getLogger()
 # 이미 uvicorn 등에서 설정한 레벨이 있다면 이 설정이 덮어쓸 수 있음
 # root_logger.setLevel(logging.INFO) 
 
-# 핸들러 추가 전에 중복 방지 (선택적)
+# 핸들러 추가 전에 중복 방지
 # if not any(isinstance(h, WebSocketLogHandler) for h in root_logger.handlers):
 ws_log_handler = WebSocketLogHandler(manager)
 ws_log_handler.setFormatter(log_formatter)
@@ -93,7 +95,7 @@ if root_logger.level > logging.INFO or root_logger.level == logging.NOTSET: # NO
     root_logger.setLevel(logging.INFO)
 
 
-# 애플리케이션 자체 로그도 남기기 (예시)
+# 애플리케이션 자체 로그도 남기기
 # 로깅을 사용할 모든 모듈 상단에 logger = logging.getLogger(__name__) 추가 후 사용
 # logger.info("이것은 FastAPI 앱의 INFO 로그입니다.")
 # logger.warning("이것은 FastAPI 앱의 WARNING 로그입니다.")
@@ -138,19 +140,61 @@ async def diagnose(input_data: DiagnosisInput = Body(...)):
     try:
         # DiagnosisService.run_diagnosis 내부에서도 logging.info 등으로 로그를 남기면
         # 해당 로그들이 WebSocket으로 스트리밍될 것입니다.
+        # 여기서는 result가 ProjectState와 유사한 딕셔너리이며,
+        # 'final_report_pdf_path' 키를 포함하고 있다고 가정합니다.
         result = await DiagnosisService.run_diagnosis(
             service_name=input_data.service_name,
             service_info=input_data.service_initial_info
         )
         logging.info(f"Diagnosis for {input_data.service_name} completed. Report type: {result.get('report_type') if isinstance(result, dict) else 'N/A'}")
+        
+        # PDF 경로가 결과에 포함되어 있다면, 다운로드 URL을 생성하거나 파일명 전달
+        if isinstance(result, dict) and result.get("final_report_pdf_path"):
+            pdf_path = result["final_report_pdf_path"]
+            pdf_filename = os.path.basename(pdf_path)
+            # 프론트엔드가 다운로드 URL을 직접 구성할 수 있도록 파일명만 전달하거나,
+            # 혹은 다운로드 URL 자체를 만들어서 전달할 수 있습니다.
+            # 여기서는 파일명을 전달하고, 프론트에서 /reports/download/{filename} 형태로 요청한다고 가정합니다.
+            result["final_report_pdf_filename"] = pdf_filename
+            # result["download_url"] = f"/reports/download/{pdf_filename}" # 이렇게도 가능
+
         return result
     except Exception as e:
         logging.error(f"Error during diagnosis for {input_data.service_name}: {str(e)}", exc_info=True) # exc_info=True로 트레이스백 포함
         raise HTTPException(status_code=500, detail=f"진단 과정 중 오류 발생: {str(e)}")
 
-# 애플리케이션 종료 시 정리 (선택적)
+# 애플리케이션 종료 시 정리
 # @app.on_event("shutdown")
 # async def shutdown_event():
 #     for ws in manager.active_connections[:]: # 복사본으로 순회
 #         await ws.close(code=1000)
 #     logging.info("Application shutdown: Closed all active WebSocket connections.")
+
+# --- PDF 다운로드 엔드포인트 추가 ---
+REPORTS_DIR = os.path.join(os.getcwd(), "outputs", "reports")
+
+@app.get("/reports/download/{filename}")
+async def download_report_pdf(filename: str):
+    # 경로 조작 방지를 위해 filename이 순수 파일명인지 확인 (간단한 예시)
+    # 실제 운영 환경에서는 더 강력한 검증 필요 (예: 허용된 문자만 포함, .. 사용 금지 등)
+    if ".." in filename or "/" in filename or "\\" in filename:
+        raise HTTPException(status_code=400, detail="잘못된 파일명입니다.")
+
+    file_path = os.path.join(REPORTS_DIR, filename)
+    logging.info(f"PDF 다운로드 요청: {file_path}")
+
+    if not os.path.exists(file_path) or not os.path.isfile(file_path):
+        logging.error(f"요청된 PDF 파일을 찾을 수 없음: {file_path}")
+        raise HTTPException(status_code=404, detail="요청된 파일을 찾을 수 없습니다.")
+    
+    # 파일명에 한글 등이 포함될 수 있으므로, Content-Disposition 헤더에 적절히 인코딩하여 전달
+    # (URL 인코딩된 파일명을 UTF-8로 디코딩 후 다시 인코딩)
+    # from urllib.parse import unquote
+    # original_filename = unquote(filename, encoding='utf-8')
+    # headers = {{
+    #     'Content-Disposition': f'attachment; filename="{original_filename}"; filename*=UTF-8\'\'{original_filename}'
+    # }}
+    # return FileResponse(file_path, media_type='application/pdf', headers=headers)
+    # FastAPI의 FileResponse는 기본적으로 filename을 기반으로 Content-Disposition을 설정해줌.
+    # 브라우저가 이를 잘 해석하도록 filename 파라미터에 원본 파일명을 전달.
+    return FileResponse(file_path, media_type='application/pdf', filename=filename)
