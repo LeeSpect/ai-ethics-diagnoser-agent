@@ -1,13 +1,9 @@
+import json
 from typing import List, Optional, Dict, Any
 
-try:
-    from ..core.states import ProjectState, PastCaseAnalysis # PastCaseAnalysis는 일반 진단에서 덜 사용될 수 있지만, 구조적 일관성을 위해 포함
-    from ..core.db_utils import search_documents, checklist_collection # 일반 점검표 항목 검색에 사용될 수 있음
-    from ..core.config import LLM_MODEL_NAME, OPENAI_API_KEY
-except ImportError: # 직접 실행 또는 테스트 시
-    from core.states import ProjectState, PastCaseAnalysis
-    from core.db_utils import search_documents, checklist_collection
-    from core.config import LLM_MODEL_NAME, OPENAI_API_KEY
+from core.states import ProjectState, PastCaseAnalysis
+from core.db_utils import search_documents, checklist_collection
+from core.config import LLM_MODEL_NAME, OPENAI_API_KEY
 
 from langchain_openai import ChatOpenAI
 

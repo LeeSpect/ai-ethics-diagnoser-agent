@@ -1,15 +1,14 @@
-from typing import List, Optional, Dict, Any
+import json
+import asyncio
+from typing import Any, Dict, List, Optional, TypedDict
 
-try:
-    from ..core.states import ProjectState, PastCaseAnalysis # 필요한 타입 임포트
-    from ..core.db_utils import search_documents, checklist_collection, past_cases_collection # DB 유틸리티 (필요시 사용)
-    from ..core.config import LLM_MODEL_NAME, OPENAI_API_KEY # LLM 설정
-except ImportError: # 직접 실행 또는 테스트 시
-    from core.states import ProjectState, PastCaseAnalysis
-    from core.db_utils import search_documents, checklist_collection, past_cases_collection
-    from core.config import LLM_MODEL_NAME, OPENAI_API_KEY
+from pydantic import BaseModel, Field
+from langchain_openai import ChatOpenAI
+from langchain_community.tools.tavily_search import TavilySearchResults
 
-from langchain_openai import ChatOpenAI # LLM 사용을 위해
+from core.config import OPENAI_API_KEY, LLM_MODEL_NAME, TAVILY_API_KEY
+from core.states import ProjectState, ServiceAnalysisOutput, PastCaseAnalysis
+from db.chroma_service import past_cases_collection, search_documents, TOP_K_RESULTS
 
 # 추천 시스템 특화 진단 시 프롬프트 템플릿
 RECSYS_SPECIFIC_DIAGNOSIS_PROMPT_TEMPLATE = """

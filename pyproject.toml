@@ -19,6 +19,7 @@ sentence-transformers = "^4.1.0"
 tavily-python = "^0.7.2"
 unstructured = {extras = ["pdf"], version = "^0.17.2"}
 langchain-community = "^0.3.24"
+playwright = "^1.52.0"
 
 
 [build-system]

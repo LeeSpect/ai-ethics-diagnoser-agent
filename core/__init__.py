@@ -19,5 +19,4 @@ from .db_utils import (
     checklist_collection, # 직접 접근이 필요할 경우 (보통은 search_documents 사용)
     past_cases_collection
 )
-
-print("Core package initialized.")
+from .graph import app as ethics_workflow_app

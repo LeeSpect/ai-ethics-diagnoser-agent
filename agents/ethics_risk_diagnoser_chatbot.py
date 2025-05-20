@@ -1,19 +1,13 @@
+import json
+import asyncio
 from typing import List, Optional, Dict, Any
 
-try:
-    from ..core.states import ProjectState, PastCaseAnalysis # 필요한 타입 임포트
-    from ..core.db_utils import search_documents, checklist_collection, past_cases_collection # DB 유틸리티
-    from ..core.config import LLM_MODEL_NAME, OPENAI_API_KEY # LLM 설정
-except ImportError:
-    from core.states import ProjectState, PastCaseAnalysis
-    from core.db_utils import search_documents, checklist_collection, past_cases_collection
-    from core.config import LLM_MODEL_NAME, OPENAI_API_KEY
+from core.states import ProjectState, PastCaseAnalysis # 필요한 타입 임포트
+from core.db_utils import search_documents, checklist_collection, past_cases_collection # DB 유틸리티
+from core.config import LLM_MODEL_NAME, OPENAI_API_KEY, TAVILY_API_KEY # LLM 설정
 
 from langchain_openai import ChatOpenAI
-
-# from prompts.specific_diagnoser_prompts import CHATBOT_BIAS_DIAGNOSIS_PROMPT, CHATBOT_PRIVACY_DIAGNOSIS_PROMPT
-# Tavily 검색 도구 (선택적)
-# from langchain_community.tools.tavily_search import TavilySearchResults # ServiceAnalyzer와 유사하게 초기화 가능
+from langchain_community.tools.tavily_search import TavilySearchResults
 
 # --- 프롬프트 예시 (실제로는 prompts 폴더에 정의) ---
 CHATBOT_SPECIFIC_DIAGNOSIS_PROMPT_TEMPLATE = """ 
