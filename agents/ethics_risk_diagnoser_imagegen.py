@@ -8,7 +8,7 @@ from langchain_community.tools.tavily_search import TavilySearchResults
 
 from core.config import OPENAI_API_KEY, LLM_MODEL_NAME, TAVILY_API_KEY
 from core.states import ProjectState, ServiceAnalysisOutput, PastCaseAnalysis
-from db.chroma_service import past_cases_collection, search_documents, TOP_K_RESULTS
+from core.db_utils import past_cases_collection, search_documents, TOP_K_RESULTS
 
 # 이미지 생성 AI 특화 진단 프롬프트 템플릿
 IMAGEGEN_SPECIFIC_DIAGNOSIS_PROMPT_TEMPLATE = """

@@ -49,6 +49,16 @@ class ReportGeneratorAgent:
         except Exception:
             return str(data) # 실패 시 원본 데이터 문자열화
 
+    def _format_list_to_string(self, data_list: Optional[List[str]]) -> str:
+        """리스트를 포맷된 문자열로 변환 (LLM 컨텍스트용)"""
+        if not data_list:
+            return "제공된 정보 없음"
+        if isinstance(data_list, list):
+            if not data_list: # 빈 리스트
+                return "해당 없음"
+            # 각 항목을 번호 매기기 또는 불릿으로 표시
+            return "\n".join([f"- {item}" for item in data_list])
+        return str(data_list) # 리스트가 아닌 경우 문자열로 변환
 
     async def generate_report(self, state: ProjectState) -> ProjectState:
         print("--- Report Generator Agent: 최종 보고서 생성 시작 ---")
@@ -56,12 +66,15 @@ class ReportGeneratorAgent:
         if not report_type:
             print("  Error: 보고서 유형이 결정되지 않았습니다. 보고서 생성을 건너뜁니다.")
             state["error_message"] = "보고서 생성: 보고서 유형 누락"
-            state["final_report_markdown"] = None
+            state["final_report_markdown"] = "보고서 생성 실패: 보고서 유형이 결정되지 않았습니다."
             return state
 
         service_name = state.get("service_name", "N/A")
         service_type_str = state.get("service_type", "N/A") # service_type은 Literal이므로 str로 사용
-        current_date_str = datetime.date.today().isoformat()
+        current_date_str = state.get("current_date")
+        if not current_date_str:
+            current_date_str = datetime.date.today().isoformat()
+            print(f"  Warning: 'current_date' not found in state, using today's date: {current_date_str}")
         
         analysis_agency = "SK AX - SKALA"
         
@@ -133,46 +146,43 @@ class ReportGeneratorAgent:
         if report_type == "issue_improvement_report":
             prompt_template = ISSUE_IMPROVEMENT_REPORT_TEMPLATE
             
-            # 필수 키 확인
-            required_keys = ['service_name', 'current_date', 'analysis_agency', 'service_type', 
-                            'target_functions', 'key_features', 'data_usage_estimation', 
-                            'estimated_users_stakeholders', 'risk_assessment_details_placeholder',
-                            'identified_vulnerabilities_placeholder', 'past_case_names_placeholder',
-                            'past_cases_analysis_details_placeholder', 'comparison_insights_placeholder',
-                            'key_takeaways_placeholder', 'short_term_recommendations_placeholder',
-                            'mid_long_term_recommendations_placeholder', 'governance_suggestions_placeholder',
-                            'conclusion_placeholder', 'context']
-            
-            for key in required_keys:
-                if key not in locals() and key not in state:
-                    print(f"  Error: 필수 키 '{key}'가 누락되었습니다.")
-                    state["error_message"] = f"보고서 생성: 필수 키 '{key}' 누락"
-                    state["final_report_markdown"] = None
-                    return state
-            
             # 플레이스홀더 채우기
-            prompt = prompt_template.format(
-                service_name=service_name,
-                current_date=current_date_str,
-                analysis_agency=analysis_agency,
-                summary_placeholder="[SUMMARY 요약은 LLM이 아래 내용을 바탕으로 직접 작성]",
-                service_type=service_type_str,
-                target_functions=sa_target_functions,
-                key_features=sa_key_features,
-                data_usage_estimation=sa_data_usage,
-                estimated_users_stakeholders=sa_stakeholders,
-                risk_assessment_details_placeholder=risk_assessment_details, # common + specific 요약
-                identified_vulnerabilities_placeholder=identified_vulnerabilities,
-                past_case_names_placeholder=past_case_names_placeholder_str,
-                past_cases_analysis_details_placeholder=past_cases_analysis_str, # 이미 포맷된 문자열
-                comparison_insights_placeholder=comparison_insights_placeholder_str,
-                key_takeaways_placeholder=key_takeaways_placeholder_str,
-                short_term_recommendations_placeholder=self._format_list_to_string(recommendations.get("short_term", []) if recommendations else []),
-                mid_long_term_recommendations_placeholder=self._format_list_to_string(recommendations.get("mid_long_term", []) if recommendations else []),
-                governance_suggestions_placeholder=self._format_list_to_string(recommendations.get("governance_suggestions", []) if recommendations else []),
-                conclusion_placeholder="[결론은 LLM이 전체 내용을 바탕으로 직접 작성]",
-                context=context_for_llm # LLM이 참고할 전체 정보
-            )
+            format_params = {
+                "service_name": service_name,
+                "current_date": current_date_str,
+                "analysis_agency": analysis_agency,
+                "summary_placeholder": "[SUMMARY 요약은 LLM이 아래 내용을 바탕으로 직접 작성]",
+                "service_type": service_type_str,
+                "target_functions": sa_target_functions,
+                "key_features": sa_key_features,
+                "data_usage_estimation": sa_data_usage,
+                "estimated_users_stakeholders": sa_stakeholders,
+                "risk_assessment_details_placeholder": risk_assessment_details,
+                "identified_vulnerabilities_placeholder": identified_vulnerabilities,
+                "past_case_names_placeholder": past_case_names_placeholder_str,
+                "past_cases_analysis_details_placeholder": past_cases_analysis_str,
+                "comparison_insights_placeholder": comparison_insights_placeholder_str,
+                "key_takeaways_placeholder": key_takeaways_placeholder_str,
+                "short_term_recommendations_placeholder": self._format_list_to_string(recommendations.get("short_term", []) if recommendations else []),
+                "mid_long_term_recommendations_placeholder": self._format_list_to_string(recommendations.get("mid_long_term", []) if recommendations else []),
+                "governance_suggestions_placeholder": self._format_list_to_string(recommendations.get("governance_suggestions", []) if recommendations else []),
+                "conclusion_placeholder": "[결론은 LLM이 전체 내용을 바탕으로 직접 작성]",
+                "context": context_for_llm,
+                # ISSUE_IMPROVEMENT_REPORT_TEMPLATE 내 예시용 플레이스홀더 기본값 처리
+                "bias_source": state.get("bias_source", "데이터 또는 알고리즘"),
+                "specific_bias_risk": "특정 그룹에 대한 불리한 결과 초래",
+                "privacy_concern_details": "개인 식별 정보 노출 가능성",
+                "past_case_name_1": "사례 1",
+                "past_case_1_cause": "원인 1",
+                "past_case_1_structure": "구조 1",
+                "past_case_1_vulnerability": "취약점 1",
+                "past_case_name_2": "사례 2",
+                "past_case_2_cause": "원인 2",
+                "past_case_2_structure": "구조 2",
+                "past_case_2_vulnerability": "취약점 2"
+            }
+            prompt = prompt_template.format(**format_params)
+
         elif report_type == "no_issue_report":
             prompt_template = NO_ISSUE_REPORT_TEMPLATE
             prompt = prompt_template.format(
@@ -195,7 +205,7 @@ class ReportGeneratorAgent:
         else:
             print(f"  Error: 알 수 없는 보고서 유형 '{report_type}'.")
             state["error_message"] = f"보고서 생성: 알 수 없는 보고서 유형 '{report_type}'"
-            state["final_report_markdown"] = None
+            state["final_report_markdown"] = f"보고서 생성 실패: 알 수 없는 보고서 유형 '{report_type}'"
             return state
 
         try:
@@ -208,7 +218,7 @@ class ReportGeneratorAgent:
         except Exception as e:
             print(f"  LLM 호출(보고서 생성) 중 오류 발생: {e}")
             state["error_message"] = f"보고서 생성 LLM 호출 오류: {e}"
-            state["final_report_markdown"] = None
+            state["final_report_markdown"] = f"보고서 생성 실패: LLM 호출 오류: {e}"
 
         print("--- Report Generator Agent: 최종 보고서 생성 완료 ---")
         return state

@@ -26,6 +26,7 @@ class ProjectState(TypedDict):
     """LangGraph 워크플로우 전체에서 사용될 상태 정의"""
     # 초기 입력
     service_name: str
+    current_date: Optional[str] # 보고서 생성 날짜
     service_type: Literal["챗봇", "추천 알고리즘", "이미지 생성 AI", "기타"]
     service_initial_info: str
 

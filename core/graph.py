@@ -132,7 +132,11 @@ async def run_full_workflow_test(initial_state: ProjectState):
         print("심각한 문제 발견되지 않음.")
 
     print("\n최종 생성된 보고서 (일부):")
-    print(final_state.get("final_report_markdown", "보고서 생성 실패")[:1000] + "...")
+    report_content = final_state.get("final_report_markdown")
+    if report_content is None:
+        print("보고서 생성 실패 (내용 없음)...")
+    else:
+        print(str(report_content)[:1000] + "...")
     return final_state
 
 
@@ -141,6 +145,7 @@ if __name__ == '__main__':
     import asyncio
     from dotenv import load_dotenv
     import os
+    import datetime
 
     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
     dotenv_path = os.path.join(project_root, '.env')
@@ -169,7 +174,8 @@ if __name__ == '__main__':
         "analyzed_service_info": None, "main_risk_categories": None, "pending_specific_diagnoses": None,
         "common_ethics_risks": None, "specific_ethics_risks_by_category": None,
         "past_case_analysis_results_by_category": None, "issue_found": None, "report_type": None,
-        "improvement_recommendations": None, "final_report_markdown": None, "error_message": None
+        "improvement_recommendations": None, "final_report_markdown": None, "error_message": None,
+        "current_date": datetime.date.today().isoformat()
     }
 
     test_state_recsys_no_issues: ProjectState = {
@@ -179,7 +185,8 @@ if __name__ == '__main__':
         "analyzed_service_info": None, "main_risk_categories": None, "pending_specific_diagnoses": None,
         "common_ethics_risks": None, "specific_ethics_risks_by_category": None,
         "past_case_analysis_results_by_category": None, "issue_found": None, "report_type": None,
-        "improvement_recommendations": None, "final_report_markdown": None, "error_message": None
+        "improvement_recommendations": None, "final_report_markdown": None, "error_message": None,
+        "current_date": datetime.date.today().isoformat()
     }
 
     async def main_test_runner():
@@ -189,13 +196,13 @@ if __name__ == '__main__':
     asyncio.run(main_test_runner())
 
     # 다이어그램 생성 (선택적, playwright 또는 pygraphviz 필요)
-    try:
-        image_bytes = app.get_graph().draw_mermaid_png()
-        with open("project_workflow_diagram.png", "wb") as f:
-            f.write(image_bytes)
-        print("\nWorkflow diagram saved to project_workflow_diagram.png")
-    except Exception as e:
-        print(f"\nError generating workflow diagram: {e}")
-        print("Ensure playwright is installed (pip install playwright && playwright install chromium)")
-        print("Alternatively, LangGraph's ASCII diagram can be printed:")
-        app.get_graph().print_ascii()
+    # try:
+    #     image_bytes = app.get_graph().draw_mermaid_png()
+    #     with open("project_workflow_diagram.png", "wb") as f:
+    #         f.write(image_bytes)
+    #     print("\nWorkflow diagram saved to project_workflow_diagram.png")
+    # except Exception as e:
+    #     print(f"\nError generating workflow diagram: {e}")
+    #     print("Ensure playwright is installed (pip install playwright && playwright install chromium)")
+    #     print("Alternatively, LangGraph's ASCII diagram can be printed:")
+    #     app.get_graph().print_ascii()
