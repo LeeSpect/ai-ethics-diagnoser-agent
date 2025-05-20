@@ -52,3 +52,8 @@ resources/chromadb/*
 
 # Jupyter Notebook
 .ipynb_checkpoints
+
+# frontend
+node_modules/
+dist/
+build/

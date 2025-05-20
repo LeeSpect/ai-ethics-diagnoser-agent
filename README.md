@@ -204,6 +204,12 @@ v
 6.  **FastAPI 서버 실행**: `uvicorn app.main:app --reload --host 0.0.0.0 --port 8000`
 7.  **API 테스트**: HTTP 클라이언트 (예: Postman, curl) 또는 웹 브라우저를 사용하여 API 엔드포인트 테스트.
 
+### 프론트엔드 애플리케이션 실행
+
+1.  **프론트엔드 디렉토리 이동**: `cd frontend`
+2.  **(필요시) 의존성 설치**: `npm install` (또는 `yarn install` / `pnpm install`)
+3.  **개발 서버 실행**: `npm run dev` (또는 `yarn dev` / `pnpm dev`)
+    -   브라우저에서 `http://localhost:5173` (또는 Vite가 안내하는 다른 포트)로 접속하여 UI를 확인할 수 있습니다.
 
 ## 9. 기여자 (Contributors)
 

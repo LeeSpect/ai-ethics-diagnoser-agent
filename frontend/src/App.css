@@ -1,0 +1,356 @@
+/* Global Styles */
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #333;
+  line-height: 1.6;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* App Container */
+.App {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+/* Header */
+.App-header {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  padding: 30px 20px;
+  color: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.App-header h1 {
+  margin: 0;
+  font-size: 2.8em;
+  font-weight: bold;
+  letter-spacing: 1px;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+/* Main Content */
+main {
+  flex-grow: 1;
+  padding: 40px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 900px; /* Increased max-width */
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+/* Diagnosis Form */
+.diagnosis-form {
+  background: rgba(255, 255, 255, 0.95);
+  padding: 35px; /* Increased padding */
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  width: 100%;
+  margin-bottom: 40px;
+  animation: fadeIn 0.8s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.form-group {
+  margin-bottom: 25px; /* Increased margin */
+  text-align: left;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 10px; /* Increased margin */
+  color: #555;
+  font-size: 1.1em; /* Increased font size */
+  font-weight: 600;
+}
+
+.form-group input[type="text"],
+.form-group textarea {
+  width: calc(100% - 24px); /* Adjusted width for padding */
+  padding: 15px; /* Increased padding */
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 1em;
+  color: #333;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  box-sizing: border-box;
+}
+
+.form-group input[type="text"]:focus,
+.form-group textarea:focus {
+  border-color: #764ba2;
+  box-shadow: 0 0 8px rgba(118, 75, 162, 0.3);
+  outline: none;
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 120px; /* Increased min-height */
+}
+
+/* Submit Button */
+.submit-button {
+  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+  color: white;
+  border: none;
+  padding: 16px 30px; /* Increased padding */
+  font-size: 1.2em; /* Increased font size */
+  font-weight: bold;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.3s ease, background-color 0.3s ease;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.submit-button:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+}
+
+.submit-button:active:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+}
+
+.submit-button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Loading Spinner (Enhanced) */
+.submit-button:disabled::before {
+  content: "";
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  margin-right: 10px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 1s ease-in-out infinite;
+  vertical-align: middle;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+
+/* Error Message */
+.error-message {
+  background-color: #ffebee;
+  color: #c62828;
+  border: 1px solid #ef9a9a;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 30px;
+  text-align: left;
+  animation: fadeIn 0.5s ease-out;
+}
+
+.error-message p {
+  margin-top: 0;
+  font-weight: bold;
+}
+
+.error-message pre {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  background: #fce4ec;
+  padding: 10px;
+  border-radius: 4px;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+/* Report Section */
+.report-section {
+  background: white;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  text-align: left;
+  animation: fadeIn 0.8s ease-out 0.2s;
+  animation-fill-mode: backwards; /* Start animation even if element is already visible */
+}
+
+.report-section h2 {
+  margin-top: 0;
+  color: #764ba2;
+  font-size: 2em;
+  border-bottom: 2px solid #eee;
+  padding-bottom: 15px;
+  margin-bottom: 25px;
+}
+
+.report-content {
+  font-size: 1.05em;
+  line-height: 1.8;
+}
+
+/* Markdown specific styles */
+.report-content h1,
+.report-content h2,
+.report-content h3,
+.report-content h4,
+.report-content h5,
+.report-content h6 {
+  color: #4a148c; /* Darker purple for headings */
+  margin-top: 1.5em;
+  margin-bottom: 0.8em;
+  line-height: 1.3;
+}
+
+.report-content h1 { font-size: 1.8em; }
+.report-content h2 { font-size: 1.6em; }
+.report-content h3 { font-size: 1.4em; }
+
+.report-content p {
+  margin-bottom: 1em;
+}
+
+.report-content ul,
+.report-content ol {
+  margin-left: 20px;
+  padding-left: 20px;
+  margin-bottom: 1em;
+}
+
+.report-content li {
+  margin-bottom: 0.5em;
+}
+
+.report-content blockquote {
+  border-left: 4px solid #667eea;
+  padding-left: 15px;
+  margin-left: 0;
+  color: #555;
+  font-style: italic;
+  background-color: #f4f6f8;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.report-content pre {
+  background-color: #2d2d2d; /* Dark background for code blocks */
+  color: #f8f8f2; /* Light text for code blocks */
+  padding: 15px;
+  border-radius: 6px;
+  overflow-x: auto;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+  font-size: 0.95em;
+}
+
+.report-content code {
+  background-color: #e8eaf6; /* Lighter background for inline code */
+  color: #3f51b5; /* Indigo for inline code */
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+  font-size: 0.9em;
+}
+
+.report-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1.5em;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.report-content th,
+.report-content td {
+  border: 1px solid #ddd;
+  padding: 12px 15px;
+  text-align: left;
+}
+
+.report-content th {
+  background-color: #f0f2f5; /* Light grey for table headers */
+  font-weight: 600;
+  color: #333;
+}
+
+.report-content tr:nth-child(even) {
+  background-color: #f9f9fc; /* Zebra striping for table rows */
+}
+
+/* Footer */
+.App-footer {
+  padding: 25px 20px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.9em;
+  margin-top: auto; /* Push footer to the bottom */
+  background: rgba(0,0,0,0.1);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .App-header h1 {
+    font-size: 2em;
+  }
+  main {
+    padding: 20px 15px;
+  }
+  .diagnosis-form {
+    padding: 25px;
+  }
+  .form-group input[type="text"],
+  .form-group textarea {
+    padding: 12px;
+  }
+  .submit-button {
+    padding: 14px 25px;
+    font-size: 1.1em;
+  }
+  .report-section {
+    padding: 20px;
+  }
+  .report-section h2 {
+    font-size: 1.6em;
+  }
+  .report-content {
+    font-size: 0.95em;
+  }
+}
+
+@media (max-width: 480px) {
+  .App-header h1 {
+    font-size: 1.6em;
+  }
+  .diagnosis-form {
+    padding: 20px;
+  }
+   .form-group label {
+    font-size: 1em;
+  }
+  .submit-button {
+    width: 100%;
+    font-size: 1em;
+  }
+  .report-section h2 {
+    font-size: 1.4em;
+  }
+}
