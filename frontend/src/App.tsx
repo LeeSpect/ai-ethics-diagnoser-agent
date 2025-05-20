@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { AppBar, Toolbar, Typography, Container, Grid, TextField, Button, Card, CardContent, CircularProgress, Alert, Box, Paper } from '@mui/material';
+import { AppBar, Toolbar, Typography, Container, Grid, TextField, Button, Card, CardContent, CircularProgress, Alert, Box, Paper, Link } from '@mui/material';
 import { createTheme, ThemeProvider, styled } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { callDiagnosisApi, type DiagnosisInput } from './api/diagnosis'; // 경로가 맞는지 확인
 import ReactMarkdown from 'react-markdown';
 import LogViewer from './components/LogViewer'; // LogViewer 컴포넌트 임포트
+import DownloadIcon from '@mui/icons-material/Download'; // 아이콘 추가
 
 // 테마 정의 (개선된 버전)
 const theme = createTheme({
@@ -166,9 +167,10 @@ function DiagnosisForm({ onSubmit, isLoading }: DiagnosisFormProps) {
 interface DiagnosisResultCardProps {
   report: string | null;
   error: string | null;
+  pdfFilename: string | null;
 }
 
-function DiagnosisResultCard({ report, error }: DiagnosisResultCardProps) {
+function DiagnosisResultCard({ report, error, pdfFilename }: DiagnosisResultCardProps) {
   if (error) {
     return (
       <Alert severity="error" sx={{ mt: 3, whiteSpace: 'pre-wrap' }}>
@@ -196,9 +198,24 @@ function DiagnosisResultCard({ report, error }: DiagnosisResultCardProps) {
 
   return (
     <StyledPaper elevation={3}>
-      <Typography variant="h5" component="h2" gutterBottom>
-        진단 결과 보고서
-      </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Typography variant="h5" component="h2" gutterBottom>
+          진단 결과 보고서
+        </Typography>
+        {report && pdfFilename && (
+          <Button
+            variant="contained"
+            color="secondary"
+            startIcon={<DownloadIcon />}
+            href={`http://localhost:8001/reports/download/${encodeURIComponent(pdfFilename)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            sx={{ mb: 1 }}
+          >
+            PDF 보고서 다운로드
+          </Button>
+        )}
+      </Box>
       <Box sx={{ 
         mt: 2, 
         p: 2, 
@@ -241,12 +258,14 @@ function App() {
   const [report, setReport] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pdfFilename, setPdfFilename] = useState<string | null>(null);
 
   const handleSubmit = async (data: { serviceName: string; serviceInfo: string }) => {
     console.log("Diagnosis submission started:", data); // API 호출 시작 로깅
     setIsLoading(true);
     setError(null);
     setReport(null); // 이전 리포트 초기화
+    setPdfFilename(null); // 이전 PDF 파일명 초기화
 
     const inputData: DiagnosisInput = {
       service_name: data.serviceName,
@@ -260,6 +279,9 @@ function App() {
 
       if (response && response.report_content && typeof response.report_content === 'string') {
         setReport(response.report_content);
+        if (response.final_report_pdf_filename && typeof response.final_report_pdf_filename === 'string') {
+          setPdfFilename(response.final_report_pdf_filename);
+        }
       } else if (response && typeof response === 'string') {
         setReport(response);
       } else {
@@ -308,7 +330,7 @@ function App() {
                 <CircularProgress size={50} />
               </Box>
             )}
-            {!isLoading && <DiagnosisResultCard report={report} error={error} />} 
+            {!isLoading && <DiagnosisResultCard report={report} error={error} pdfFilename={pdfFilename} />} 
           </Grid>
           <Grid item xs={12}> {/* 로그 뷰어 전체 너비 */} 
             <LogViewer />

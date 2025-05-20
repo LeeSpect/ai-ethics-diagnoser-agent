@@ -40,11 +40,11 @@ class CommonEthicsDiagnoserAgent:
         retrieved_checklist_items_str = "\n"
         print("  자율점검표에서 관련 항목 검색 중...")
         if checklist_collection:
-            # 각 핵심 원칙에 대해 검색하거나, 서비스 설명 전체로 한 번 검색할 수 있음
+            # 각 핵심 원칙에 대해 검색하거나, 서비스 설명 전체로 한 번 검색 가능
             # 여기서는 서비스 설명과 각 원칙을 조합하여 검색
             query_for_rag = f"{service_name} ({service_type}) 서비스의 {', '.join(ethics_core_principles)} 관련 윤리적 고려사항"
 
-            # 더 나은 방법: 각 원칙별로 검색하여 관련성 높은 내용을 모음
+            # 각 원칙별로 검색하여 관련성 높은 내용을 모음
             all_retrieved_docs = []
             for principle in ethics_core_principles:
                 principle_query = f"{service_name} 서비스의 {principle} 원칙 관련 내용"
