@@ -2,7 +2,7 @@
 
 **최종 업데이트: 2025년 5월 19일**
 
-본 프로젝트는 특정 AI 서비스(챗봇, 추천 알고리즘, 이미지 생성 AI)를 대상으로 윤리적 리스크를 심층적으로 분석하고, 과거 AI 윤리 문제 사례와의 비교를 통해 실질적인 개선 권고안을 도출하는 멀티 에이전트 시스템입니다. LangGraph를 기반으로 구현되었으며, "2025 인공지능 윤리기준 실천을 위한 자율점검표(안)"을 핵심 기준으로 활용합니다.
+본 프로젝트는 특정 AI 서비스(챗봇, 추천 알고리즘, 이미지 생성 AI)를 대상으로 윤리적 리스크를 심층적으로 분석하고, 과거 AI 윤리 문제 사례와의 비교를 통해 실질적인 개선 권고안을 도출하는 멀티 에이전트 시스템입니다. LangGraph와 FastAPI를 기반으로 구현되었으며, "2025 인공지능 윤리기준 실천을 위한 자율점검표(안)"을 핵심 기준으로 활용합니다.
 
 ## 1. 프로젝트 개요 (Overview)
 
@@ -17,7 +17,7 @@
     -   **RAG (Retrieval Augmented Generation)**: ChromaDB에 저장된 "2025 인공지능 윤리기준 실천을 위한 자율점검표(안)" PDF 및 과거 AI 윤리 사례 데이터를 활용하여, LLM이 보다 정확하고 근거 있는 분석 및 제안을 하도록 지원합니다.
     -   **동적 정보 수집**: Tavily Search API를 통해 최신 정보 및 추가적인 과거 AI 윤리 사례를 실시간으로 웹에서 수집하여 분석에 활용합니다.
     -   **LLM 기반 지능형 처리**: GPT-4o 모델을 활용하여 서비스 분석, 리스크 평가, 과거 사례 심층 분석, 개선안 제안, 그리고 최종 보고서 생성 등 핵심 지능형 작업을 수행합니다.
--   **활용 도구 (Tools)**: Python, LangGraph, LangChain, ChromaDB, Tavily Search API, OpenAI API (GPT-4o), Sentence Transformers (jhgan/ko-sroberta-multitask).
+-   **활용 도구 (Tools)**: Python, LangGraph, LangChain, FastAPI, ChromaDB, Tavily Search API, OpenAI API (GPT-4o), Sentence Transformers (jhgan/ko-sroberta-multitask).
 
 ## 2. 주요 기능 (Features)
 
@@ -33,7 +33,7 @@
     -   **진단 결과 기반 분기**: 모든 진단 완료 후, 식별된 윤리적 문제의 심각성을 판단하여 개선안이 필요한 경우와 그렇지 않은 경우를 구분합니다.
     -   **두 가지 보고서 유형**: "문제 없음" 보고서와 "개선안 포함" 보고서를 자동으로 생성합니다.
     -   **상세 내용**: 보고서는 명확한 구조와 함께 상세 분석 내용, 과거 사례 비교를 포함하며, 필요한 경우 구체적인 개선 권고안을 포함합니다.
-
+-   **API 기반 서비스 제공**: FastAPI를 통해 외부 시스템이나 사용자가 AI 윤리 진단 기능을 쉽게 요청하고, 구조화된 진단 결과를 보고서 형태로 받을 수 있는 RESTful API 인터페이스를 제공합니다.
 
 ## 3. 기술 스택 (Tech Stack)
 
@@ -41,12 +41,12 @@
 | :---------------------- | :------------------------------------------------------------- |
 | 프로그래밍 언어         | Python 3.11                                                    |
 | 핵심 프레임워크         | LangGraph (에이전트 오케스트레이션), LangChain (LLM 통합 및 도구) |
-
+| API 서버                | FastAPI, Uvicorn                                               |
 | LLM (Large Language Model)| GPT-4o (OpenAI API 활용)                                       |
 | 임베딩 모델 (Embedding) | `jhgan/ko-sroberta-multitask` (Sentence Transformers)          |
 | 벡터 데이터베이스 (VectorDB)| ChromaDB (RAG 및 과거 사례 데이터 저장/검색)                 |
 | 웹 검색 도구            | Tavily Search API                                              |
-| 데이터 직렬화/검증      | Pydantic (State 정의에 활용)                 |
+| 데이터 직렬화/검증      | Pydantic (FastAPI 스키마 및 State 정의에 활용)                 |
 
 ## 4. 에이전트 구성 (Agents)
 
@@ -104,7 +104,7 @@ LangGraph의 상태(State)는 파이프라인 전체에서 에이전트 간 정�
 
 **개념적 데이터 흐름:**
 ```
-
+[FastAPI 요청: 서비스 정보]
 |
 v
 [Service Analyzer Agent] --> [Risk Classifier Agent (main_risk_categories 생성, pending_specific_diagnoses 초기화)]
@@ -128,7 +128,7 @@ v
 (개선안 생성)                     |
 |
 v
-[Report Generator Agent] --> [보고서 결과]
+[Report Generator Agent] --> [FastAPI 응답: 보고서]
 ```
 
 -   **흐름 설명**:
@@ -201,7 +201,7 @@ v
 5.  **ChromaDB 데이터 로드**: (초기 데이터 로드 스크립트 실행 - `scripts/load_chroma_data.py` 와 같은 형태로 구현 필요)
     - "2025 인공지능 윤리기준 실천을 위한 자율점검표(안).pdf" 임베딩 및 저장
     - (선택적) 초기 과거 AI 윤리 사례 데이터 임베딩 및 저장
-
+6.  **FastAPI 서버 실행**: `uvicorn app.main:app --reload --host 0.0.0.0 --port 8000`
 7.  **API 테스트**: HTTP 클라이언트 (예: Postman, curl) 또는 웹 브라우저를 사용하여 API 엔드포인트 테스트.
 
 
